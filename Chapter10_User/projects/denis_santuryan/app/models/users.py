@@ -1,8 +1,8 @@
 from flask_security import RoleMixin, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import relationship, backref
 
 from app.database import db, Base
-from app import login_manager
 from app.tools.format_dob import calculate_age
 
 
@@ -32,8 +32,8 @@ class UserModel(db.Model, UserMixin):
     age = db.Column(db.Integer)
     picture = db.Column(db.String)
     post = db.relationship('PostsModel', backref='usermodel', uselist=False)
-    roles = db.relationship('Role', secondary='roles_users',
-                            backref='usermodel', lazy='dynamic')
+    roles = relationship('Role', secondary='roles_users',
+                         backref=backref('users', lazy='dynamic'))
 
     def __init__(self, username, name_first, name_last, email, phone, dob, sex, password, age=None, picture=None):
         self.username = username
@@ -66,12 +66,3 @@ class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
-
-
-# catch an Exception and specify it instead of catching every exception
-@login_manager.user_loader
-def load_user(user_id):
-    try:
-        return UserModel.query.get(user_id)
-    except Exception as e:
-        print(e)
