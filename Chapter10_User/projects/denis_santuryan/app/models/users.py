@@ -1,9 +1,16 @@
-from flask_login import UserMixin
+from flask_security import RoleMixin, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import db
+from app.database import db, Base
 from app import login_manager
 from app.tools.format_dob import calculate_age
+
+
+class RolesUsers(Base):
+    __tablename__ = 'roles_users'
+    id = db.Column(db.Integer(), primary_key=True)
+    user_id = db.Column('user_id', db.Integer(), db.ForeignKey('user.id'))
+    role_id = db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
 
 
 class UserModel(db.Model, UserMixin):
@@ -25,6 +32,8 @@ class UserModel(db.Model, UserMixin):
     age = db.Column(db.Integer)
     picture = db.Column(db.String)
     post = db.relationship('PostsModel', backref='usermodel', uselist=False)
+    roles = db.relationship('Role', secondary='roles_users',
+                            backref='usermodel', lazy='dynamic')
 
     def __init__(self, username, name_first, name_last, email, phone, dob, sex, password, age=None, picture=None):
         self.username = username
@@ -51,6 +60,12 @@ class UserModel(db.Model, UserMixin):
     @classmethod
     def find_by_email(cls, temp_email):
         return cls.query.filter_by(email=temp_email).first()
+
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
 
 
 # catch an Exception and specify it instead of catching every exception

@@ -1,11 +1,13 @@
 import os
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
 from flask_admin import Admin
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from flask_security import Security, SQLAlchemyUserDatastore
+
 from app.admin.admin_index import MyAdminIndexView
 from app.database import db
+from app.models import UserModel, Role
 
 migrate = Migrate()
 admin = Admin()
@@ -28,6 +30,9 @@ def create_app():
 
     login_manager.login_view = '/'
 
+    user_datastore = SQLAlchemyUserDatastore(db, UserModel, Role)
+    security = Security(app, user_datastore)
+
     from app.posts.views import posts_blueprint
     from app.profiles.views import profiles_blueprint
     app.register_blueprint(posts_blueprint, url_prefix="/posts")
@@ -38,6 +43,3 @@ def create_app():
                      view_func=app.send_static_file)
 
     return app
-
-
-
